@@ -219,20 +219,20 @@ resource "aws_security_group" "bastion_sg" {
 resource "aws_security_group" "web_alb_sg" {
   vpc_id = aws_vpc.vpc_dev.id
 
-  # Allow SSH from VPC-Shared CIDR
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["10.25.0.0/16"]
-  }
-
-  # Allow HTTP access from everywhere
+  # Allow HTTP access from ALB
   ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Allow SSH from Bastion Host Security Group
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    security_groups = [aws_security_group.bastion_sg.id]
   }
 
   egress {
@@ -244,6 +244,7 @@ resource "aws_security_group" "web_alb_sg" {
 
   tags = { Name = "Web-ALB-SG" }
 }
+
 
 
 resource "aws_security_group" "mysql_sg" {
