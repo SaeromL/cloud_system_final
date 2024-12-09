@@ -2,7 +2,7 @@
 
 This repository contains Terraform code to deploy a secure multi-VPC architecture in AWS. 
 
-<h4>Files in the Repository</h4>
+<h3>Files in the Repository</h3>
 - main.tf: Contains the Terraform configuration for deploying resources.
 
 <h4>Initialize Terraform</h4>
