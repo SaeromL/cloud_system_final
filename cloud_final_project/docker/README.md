@@ -16,7 +16,7 @@
 <img width="648" alt="image" src="https://github.com/user-attachments/assets/8fd27b58-5c91-48e8-a30a-ee0671dbff44">
 
 <p>And update the inbound rules from security group.</p>
-<img width="406" alt="image" src="https://github.com/user-attachments/assets/2dd52b24-6294-4572-842a-d5d3f2a29798">
+<img width="406" alt="image" src="https://github.com/user-attachments/assets/2dd52b24-6294-4572-842a-d5d3f2a29798"><br><br>
 
 <p>Now this app is available via web browser.</p>
 <img width="425" alt="image" src="https://github.com/user-attachments/assets/f357351f-c85c-42ba-9ee5-deda66750dec">
