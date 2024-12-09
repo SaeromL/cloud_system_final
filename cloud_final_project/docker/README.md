@@ -13,7 +13,7 @@
 <img width="543" alt="image" src="https://github.com/user-attachments/assets/a15ad5c7-3a08-4ac1-b587-db5409b28a0c"><br><br>
 
 <p>Since this app is only available to cloud 9 container 67ce047da82f, make the container to listen to port 80. </p>
-<img width="648" alt="image" src="https://github.com/user-attachments/assets/8fd27b58-5c91-48e8-a30a-ee0671dbff44">
+<img width="648" alt="image" src="https://github.com/user-attachments/assets/8fd27b58-5c91-48e8-a30a-ee0671dbff44"><br><br>
 
 <p>And update the inbound rules from security group.</p>
 <img width="406" alt="image" src="https://github.com/user-attachments/assets/2dd52b24-6294-4572-842a-d5d3f2a29798"><br><br>
