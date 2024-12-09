@@ -1,11 +1,15 @@
 # Specify AWS provider
 terraform {
-required_providers {
-  aws = {
-    source = "hashicorp/aws"
-    version = "~> 3.27"
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      version = "~> 3.27"
+    }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
   }
-}
     required_version = ">= 0.14.6"
 }
 
@@ -130,13 +134,21 @@ resource "aws_route_table" "rt_private_dev" {
     cidr_block     = "0.0.0.0/0"
     nat_gateway_id = aws_nat_gateway.nat_dev.id
   }
+  route {
+    cidr_block     = aws_vpc.vpc_shared.cidr_block
+    vpc_peering_connection_id = aws_vpc_peering_connection.vpc_peering.id
+  }
   tags = { Name = "Private-RT-Dev" }
 }
 
-resource "aws_route" "route_dev_to_shared" {
-  route_table_id         = aws_route_table.rt_private_dev.id
-  destination_cidr_block = aws_vpc.vpc_shared.cidr_block
-  vpc_peering_connection_id = aws_vpc_peering_connection.vpc_peering.id
+resource "aws_route_table_association" "assoc_private_dev_sn1" {
+  subnet_id      = aws_subnet.private_dev_sn1.id
+  route_table_id = aws_route_table.rt_private_dev.id
+}
+
+resource "aws_route_table_association" "assoc_private_dev_sn2" {
+  subnet_id      = aws_subnet.private_dev_sn2.id
+  route_table_id = aws_route_table.rt_private_dev.id
 }
 
 # Public Route Table for VPC-Shared
@@ -161,18 +173,16 @@ resource "aws_route_table" "rt_private_shared" {
     cidr_block     = "0.0.0.0/0"
     nat_gateway_id = aws_nat_gateway.nat_shared.id
   }
+  route {
+    cidr_block     = aws_vpc.vpc_dev.cidr_block
+    vpc_peering_connection_id = aws_vpc_peering_connection.vpc_peering.id
+  }
   tags = { Name = "Private-RT-Shared" }
 }
 
 resource "aws_route_table_association" "rt_assoc_private_shared_sn1" {
   subnet_id      = aws_subnet.private_shared_sn1.id
   route_table_id = aws_route_table.rt_private_shared.id
-}
-
-resource "aws_route" "route_shared_to_dev" {
-  route_table_id         = aws_route_table.rt_private_shared.id
-  destination_cidr_block = aws_vpc.vpc_dev.cidr_block
-  vpc_peering_connection_id = aws_vpc_peering_connection.vpc_peering.id
 }
 
 
@@ -192,7 +202,7 @@ resource "aws_security_group" "bastion_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["54.160.106.34/32"]
+    cidr_blocks = ["99.241.58.243/32"]
   }
 
   egress {
@@ -209,6 +219,15 @@ resource "aws_security_group" "bastion_sg" {
 resource "aws_security_group" "web_alb_sg" {
   vpc_id = aws_vpc.vpc_dev.id
 
+  # Allow SSH from VPC-Shared CIDR
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["10.25.0.0/16"]
+  }
+
+  # Allow HTTP access from everywhere
   ingress {
     from_port   = 80
     to_port     = 80
@@ -230,6 +249,15 @@ resource "aws_security_group" "web_alb_sg" {
 resource "aws_security_group" "mysql_sg" {
   vpc_id = aws_vpc.vpc_shared.id
 
+  # Allow SSH from Bastion Host or VPC-Shared CIDR
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["10.25.0.0/16"]  # VPC-Shared CIDR block
+  }
+
+  # Allow MySQL access from VPC-Dev
   ingress {
     from_port   = 3306
     to_port     = 3306
@@ -248,11 +276,24 @@ resource "aws_security_group" "mysql_sg" {
 }
 
 
-# Bastion Host
+# Bastion Host Key Pair
+resource "tls_private_key" "bastion_key" {
+  algorithm = "RSA"
+  rsa_bits  = 2048
+}
+
+resource "aws_key_pair" "bastion_key_pair" {
+  key_name   = "bastion-key"
+  public_key = tls_private_key.bastion_key.public_key_openssh
+}
+
+
+# Bastion Host 
 resource "aws_instance" "bastion" {
   ami           = "ami-0453ec754f44f9a4a"
   instance_type = "t2.micro"
   subnet_id     = aws_subnet.public_shared_sn1.id
+  key_name      = aws_key_pair.bastion_key_pair.key_name
   security_groups = [aws_security_group.bastion_sg.id]
   tags = { Name = "Bastion-Host" }
 }
